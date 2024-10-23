@@ -857,7 +857,7 @@ def exclude_s2_adj_by_cpp(area_id, s2_dir, s2_adj_dir):
 
 def generate_sentinel2_adjusted():
     # Initialize earthengine-api
-    ee.Initialize()
+    ee.Initialize(project='ee-pix2pix')
 
     root_dir = "sentinel2/"
     s2_dir_prefix = root_dir + "raw_"
