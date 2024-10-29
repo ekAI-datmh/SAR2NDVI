@@ -127,8 +127,8 @@ if __name__ == "__main__":
     parser.add_argument("--output_channel", type=int, default=1)
     parser.add_argument("--gen_name", type=str, default="unet_128")
     parser.add_argument("--dis_name", type=str, default="basic")
-    parser.add_argument("--n_epoch", type=int, default=5000)
-    parser.add_argument("--n_epoch_decay", type=int, default=5000)
+    parser.add_argument("--n_epoch", type=int, default=100)
+    parser.add_argument("--n_epoch_decay", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--lambda_l1", type=float, default=500)
     parser.add_argument("--early_stop_patience", type=int, default=1000)
@@ -300,12 +300,11 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    for i in range(args.n_epoch + args.n_epoch_decay):
+    for i in range(args.n_epoch_decay):
         log_loss_gen_sum, log_loss_gen_gan, \
             log_loss_gen_mae, log_loss_dis = [], [], [], []
 
-        for (vvvh, ndvi) in (train1_dataloader
-                             if i < args.n_epoch else train2_dataloader):
+        for (vvvh, ndvi) in (train2_dataloader):
             ndvi, vvvh = ndvi.to(device), vvvh.to(device)
 
             fake_ndvi = gen(vvvh)

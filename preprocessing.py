@@ -259,6 +259,20 @@ class SpaceShiftNdviDataset(Dataset):
             "shuffle": True,
             "y_data": True,
         },
+        "new_test": {
+            "directory": "new_test",
+            "start_ratio": 0,
+            "end_ratio": 1,
+            "shuffle": False,
+            "y_data": False,
+        },
+        "sentinel2_adjusted_004": {
+            "directory": "test",
+            "start_ratio": 0,
+            "end_ratio": 1,
+            "shuffle": False,
+            "y_data": True,
+        },
     }
 
     def __init__(
@@ -425,8 +439,8 @@ class SpaceShiftNdviDataset(Dataset):
                         filepath = os.path.join(root, file)
                         if filepath.endswith("_ndvi.tif"):
                             ndvi_path = filepath
-                        elif filepath.endswith("_ndvi_crop.tif"):
-                            ndvi_crop_path = filepath
+                        #elif filepath.endswith("_ndvi_crop.tif"):
+                        #    ndvi_crop_path = filepath
 
             x_paths, y_paths = list(), list()
             if self.vvvh_original:
@@ -524,18 +538,18 @@ EXCLUDE_LIST_002 = \
      "20170804", "20170811", "20170816", "20170824", "20170829", "20170831",
      "20170913", "20170920", "20171003", "20171010", "20171015", "20171023",
      "20171028", "20171030", "20171104", "20171109", "20171112", "20171119",
-     "20171129"]
+     "20171129", "20170905"]
 EXCLUDE_LIST_003 = \
     ["20170501", "20170528", "20170610", "20170630", "20170715", "20170722",
      "20170727", "20170804", "20170811", "20170816", "20170824", "20170829",
      "20170831", "20170918", "20170920", "20171003", "20171010", "20171015",
      "20171023", "20171028", "20171030", "20171104", "20171109", "20171117",
-     "20171119", "20171124"]
+     "20171119", "20171124", "20170905"]
 EXCLUDE_LIST_001 = \
     ["20170501", "20170630", "20170715", "20170722", "20170727", "20170811",
      "20170816", "20170829", "20170831", "20170913", "20170920", "20171003",
      "20171010", "20171015", "20171028", "20171030", "20171104", "20171109",
-     "20171117", "20171119", "20171124"]
+     "20171117", "20171119", "20171124", "20170905"]
 
 
 def get_sar_vh_list(area_id, crop=False):
@@ -608,7 +622,7 @@ def create_shape_for_geotiff(region):
 
 def download_raw_sentinel2_images(area_id, output_dir,
                                   start_date="2017-05-01",
-                                  end_date="2017-11-30"):
+                                  end_date="2017-11-26"):
     os.makedirs(output_dir, exist_ok=True)
 
     # Get Image Collection by geometry and date

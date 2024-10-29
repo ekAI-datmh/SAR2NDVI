@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_path",
         type=str,
-        default="output/training-sd0-itvv01_vv995_vh01_vh_prvi_rfdi_rvi4s1_rvi_pvhvv_mvhvv-ataspect_rot20_flip-is128-oc1-gnunet_128-dnbasic-ne5000-ed5000-bs1-la50000-es1000-imbicubic/gen_best-ep05302-vl00906.pt")
+        default="/mnt/data1tb/SAR2NDVI/output/training-sd0-itvv01_vv995_vh01_vh_prvi_rfdi_rvi4s1_rvi_pvhvv_mvhvv-ataspect_rot20_flip-is128-oc1-gnunet_128-dnbasic-ne100-ed100-bs1-la50000-es1000-imbicubic/gen_best-ep00113-vl01440.pt")
     parser.add_argument("--output_folder", type=str,
                         default="output/test_tif/")
     args, remaining = parser.parse_known_args()
