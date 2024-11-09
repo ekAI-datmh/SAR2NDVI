@@ -305,8 +305,8 @@ if __name__ == "__main__":
             log_loss_gen_mae, log_loss_dis = [], [], [], []
 
         for (vvvh, ndvi) in (train1_dataloader):
-            if np.isnan(ndvi).any():
-                print(2)
+            # if np.isnan(ndvi).any():
+            #     print(2)
             ndvi, vvvh = ndvi.to(device), vvvh.to(device)
 
             fake_ndvi = gen(vvvh)

@@ -71,8 +71,8 @@ def transform_vvvh(vvvh, dems=None,
         if img_size > 0 else vvvh[0]
     vh = cv2.resize(vvvh[1], dsize=(img_size, img_size)) \
         if img_size > 0 else vvvh[1]
-    vv = fill_nan_with_mean(vv)
-    vh = fill_nan_with_mean(vh)
+    #vv = fill_nan_with_mean(vv)
+    #vh = fill_nan_with_mean(vh)
     if np.isnan(vv).any():
         print(0)
     if np.isnan(vh).any():
