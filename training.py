@@ -187,7 +187,7 @@ if __name__ == "__main__":
         torch.cuda.manual_seed(args.seed)
 
     train1_dataset = SpaceShiftNdviDataset(
-        split="sentinel2_adjusted",
+        split="sentinel2",
         vvvh_original=True,
         vvvh_crop=False,
         transform_x=lambda x, **kwargs:
@@ -199,25 +199,25 @@ if __name__ == "__main__":
                               aug_types=args.aug_types)
     )
 
-    train2_dataset = SpaceShiftNdviDataset(
-        split="002",
-        vvvh_original=True,
-        vvvh_crop=False,
-        transform_x=lambda x, **kwargs:
-            transform_vvvh(x, input_types=args.input_types, **kwargs),
-        transform_y=lambda x: transform_ndvi(x, n_channel=1),
-        seed=args.seed,
-        augmentation=lambda x, y:
-            augment_vvvh_ndvi(x, y, img_size=args.image_size,
-                              aug_types=args.aug_types)
-    )
+    # train2_dataset = SpaceShiftNdviDataset(
+    #     split="002",
+    #     vvvh_original=True,
+    #     vvvh_crop=False,
+    #     transform_x=lambda x, **kwargs:
+    #         transform_vvvh(x, input_types=args.input_types, **kwargs),
+    #     transform_y=lambda x: transform_ndvi(x, n_channel=1),
+    #     seed=args.seed,
+    #     augmentation=lambda x, y:
+    #         augment_vvvh_ndvi(x, y, img_size=args.image_size,
+    #                           aug_types=args.aug_types)
+    # )
 
     val_dataset = SpaceShiftNdviDataset(
         split="003",
         vvvh_original=True,
         vvvh_crop=False,
-        ndvi_original=False,
-        ndvi_crop=True,
+        ndvi_original=True,
+        ndvi_crop=False,
         transform_x=lambda x, **kwargs:
             transform_vvvh(x, img_size=args.image_size,
                            input_types=args.input_types, **kwargs),
@@ -235,13 +235,13 @@ if __name__ == "__main__":
         pin_memory=True
     )
 
-    train2_dataloader = DataLoader(
-        train2_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=0 if device == torch.device("cpu") else 1,
-        pin_memory=True
-    )
+    # train2_dataloader = DataLoader(
+    #     train2_dataset,
+    #     batch_size=args.batch_size,
+    #     shuffle=True,
+    #     num_workers=0 if device == torch.device("cpu") else 1,
+    #     pin_memory=True
+    # )
 
     val_dataloader = DataLoader(
         val_dataset,
@@ -300,11 +300,13 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    for i in range(args.n_epoch_decay):
+    for i in range(args.n_epoch):
         log_loss_gen_sum, log_loss_gen_gan, \
             log_loss_gen_mae, log_loss_dis = [], [], [], []
 
-        for (vvvh, ndvi) in (train2_dataloader):
+        for (vvvh, ndvi) in (train1_dataloader):
+            if np.isnan(ndvi).any():
+                print(2)
             ndvi, vvvh = ndvi.to(device), vvvh.to(device)
 
             fake_ndvi = gen(vvvh)
@@ -352,7 +354,8 @@ if __name__ == "__main__":
         val_loss = validate(val_dataloader, gen, args)
         result["val_loss"].append(val_loss)
 
-        if i == args.n_epoch:
+        # if i == args.n_epoch:
+        if i == 0:
             early_stop.counter = 0
         will_early_stop = early_stop(i, val_loss, [gen, dis])
 

@@ -8,8 +8,10 @@ output/
 dataset.zip
 additional_data.zip
 output.zip
-
+new_dataset/
 pytorch-CycleGAN-and-pix2pix/
+Old_data/
+new_dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

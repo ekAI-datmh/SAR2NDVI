@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import torch
 import ttach as tta
+import matplotlib.pyplot as plt
 
 from preprocessing import SpaceShiftNdviDataset, do_nothing, transform_vvvh
 
@@ -140,14 +141,14 @@ if __name__ == "__main__":
         print("min: %.3f, max: %.3f" % (np.nanmin(p), np.nanmax(p)))
         p[(vvvh[0] + vvvh[1]) == 0.0] = -100
 
-        # plt.subplot(321).imshow(vvvh[0], vmin=0, vmax=1)
-        # plt.subplot(322).imshow(vvvh[1], vmin=0, vmax=1)
-        # plt.subplot(323).imshow(p, vmin=-1, vmax=1)
-        # if s2 is not None:
-        #     plt.subplot(324).imshow(s2, vmin=-1, vmax=1)
-        # plt.subplot(325).imshow(p, vmin=0, vmax=1)
-        # if s2 is not None:
-        #     plt.subplot(326).imshow(s2, vmin=0, vmax=1)
-        # plt.show()
+        plt.subplot(321).imshow(vvvh[0], vmin=0, vmax=1)
+        plt.subplot(322).imshow(vvvh[1], vmin=0, vmax=1)
+        plt.subplot(323).imshow(p, vmin=-1, vmax=1)
+        if s2 is not None:
+             plt.subplot(324).imshow(s2, vmin=-1, vmax=1)
+        plt.subplot(325).imshow(p, vmin=0, vmax=1)
+        if s2 is not None:
+             plt.subplot(326).imshow(s2, vmin=0, vmax=1)
+        plt.show()
 
         cv2.imwrite("%s/daiki_%s_ndvi.tif" % (output_folder, date), p)

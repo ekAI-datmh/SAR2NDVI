@@ -23,6 +23,7 @@ from scipy.interpolate import griddata
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from scipy.ndimage import generic_filter
 
 
 def do_nothing(x, dems=None):
@@ -42,13 +43,43 @@ def img_reshape(_img, axis=0):
         raise NotImplementedError
 
 
+def nanmean_filter(values):
+    # Extract the center pixel value
+    center = values[len(values) // 2]
+    # Calculate the mean of non-NaN neighbors
+    neighbor_mean = np.nanmean(values) if np.any(~np.isnan(values)) else np.nan
+    # If the center pixel is NaN, replace it with the neighbor mean
+    return neighbor_mean if np.isnan(center) else center
+
+def fill_nan_with_mean(array, max_iter=10):
+    filled_array = array.copy()
+    for _ in range(max_iter):
+        prev_nan_count = np.isnan(filled_array).sum()
+        filled_array = generic_filter(filled_array, nanmean_filter, footprint=np.ones((3, 3)), mode='constant', cval=np.nan)
+        new_nan_count = np.isnan(filled_array).sum()
+        # Stop if no more NaNs are filled in this iteration
+        if new_nan_count == 0 or new_nan_count == prev_nan_count:
+            break
+    return filled_array
+
+
+
+
 def transform_vvvh(vvvh, dems=None,
                    img_size=0, input_types="vvmax_vhmax_dvvvhmax"):
     vv = cv2.resize(vvvh[0], dsize=(img_size, img_size)) \
         if img_size > 0 else vvvh[0]
     vh = cv2.resize(vvvh[1], dsize=(img_size, img_size)) \
         if img_size > 0 else vvvh[1]
+    vv = fill_nan_with_mean(vv)
+    vh = fill_nan_with_mean(vh)
+    if np.isnan(vv).any():
+        print(0)
+    if np.isnan(vh).any():
+        print(1)
     inputs = list()
+    epsilon = 1e-10
+    
     for input_type in input_types.split("_"):
         if input_type.startswith("vv"):
             d = vv
@@ -63,15 +94,18 @@ def transform_vvvh(vvvh, dems=None,
                           out=np.zeros_like(vh, dtype=np.float64),
                           where=vv != 0)
         elif input_type.startswith("prvi"):
-            d = (1 - vv / (vh + vv)) * vh
+            d = (1 - vv / (vh + vv + epsilon)) * vh
         elif input_type.startswith("rfdi"):
-            d = (vv - vh) / (vh + vv)
+            d = (vv - vh) / (vh + vv) + epsilon
         elif input_type.startswith("rvi4s1"):
-            d = np.sqrt(vv / (vh + vv)) * ((4 * vh) / (vh + vv))
+            vv = np.clip(vv, 0, None)
+            vh = np.clip(vh, 0, None)
+
+            d = np.sqrt(vv / (vh + vv + epsilon)) * ((4 * vh) / (vh + vv + epsilon))
         elif input_type.startswith("rvi"):
-            d = (4 * vh) / (vh + vv)
+            d = (4 * vh) / (vh + vv + epsilon)
         elif input_type.startswith("sni"):
-            d = (vh - vv) / (vh + vv)
+            d = (vh - vv) / (vh + vv + epsilon)
         elif input_type.startswith("pvhvv"):
             d = vh + vv
         elif input_type.startswith("mvhvv"):
@@ -273,11 +307,18 @@ class SpaceShiftNdviDataset(Dataset):
             "shuffle": False,
             "y_data": True,
         },
+        "new_train": {
+            "directory": "new_train",
+            "start_ratio": 0,
+            "end_ratio": 1,
+            "shuffle": False,
+            "y_data": True,
+        },
     }
 
     def __init__(
         self,
-        root: str = "dataset",
+        root: str = "/mnt/data1tb/SAR2NDVI/dataset",
         split: str = "train",
         vvvh_original: bool = True,
         vvvh_crop: bool = False,
@@ -313,6 +354,7 @@ class SpaceShiftNdviDataset(Dataset):
         self.dems = self.load_dems()
 
         vv_filepaths = list()
+        #print(self.split)
         directory = os.path.join(self.root, self.metadata[split]["directory"])
         if split == "002" or split == "003":
             directory = os.path.join(directory, split)
@@ -323,6 +365,7 @@ class SpaceShiftNdviDataset(Dataset):
                     vv_filepaths.append(filepath)
 
         vv_filepaths = sorted(vv_filepaths)
+        #print(self.metadata[split], ":", vv_filepaths)
         self.paths_dict = self.create_path_dict(vv_filepaths)
         self.selected_paths_list_dict = dict()
 
@@ -369,6 +412,8 @@ class SpaceShiftNdviDataset(Dataset):
         return [[di, i] for i, di in zip(idx, dataset_idx)]
 
     def fill_ndvi_path(self):
+        #print(self.sentinel2_ndvi_paths)
+        #print(self.split)
         def get_all_ndvi_tifs(folder):
             ndvi_tifs = list()
             for root, _, files in os.walk(folder):
@@ -392,6 +437,7 @@ class SpaceShiftNdviDataset(Dataset):
             }
 
     def find_nearest_ndvi_path(self, vv_path, data_name):
+        #print(self.sentinel2_ndvi_paths)
         planet_date_str = \
             vv_path.replace(self.root, "").split("/")[3].split("_")[0]
         planet_datetime = datetime.datetime.strptime(planet_date_str, "%Y%m%d")
@@ -418,7 +464,7 @@ class SpaceShiftNdviDataset(Dataset):
         return None, None
 
     def create_path_dict(self, paths: list):
-        if self.split.startswith("sentinel2"):
+        if self.split.startswith("sentinel2") or self.split.startswith("003") or self.split.startswith("002"):
             self.fill_ndvi_path()
         paths_dict = dict()
         for vv_path in paths:
@@ -426,7 +472,7 @@ class SpaceShiftNdviDataset(Dataset):
             if data_name not in paths_dict:
                 paths_dict[data_name] = list()
 
-            if self.split.startswith("sentinel2"):
+            if self.split.startswith("sentinel2") or self.split.startswith("003") or self.split.startswith("002"):
                 ndvi_path, ndvi_crop_path = \
                     self.find_nearest_ndvi_path(vv_path, data_name)
                 if ndvi_path is None:
@@ -439,8 +485,8 @@ class SpaceShiftNdviDataset(Dataset):
                         filepath = os.path.join(root, file)
                         if filepath.endswith("_ndvi.tif"):
                             ndvi_path = filepath
-                        #elif filepath.endswith("_ndvi_crop.tif"):
-                        #    ndvi_crop_path = filepath
+                        elif filepath.endswith("_ndvi_crop.tif"):
+                            ndvi_crop_path = filepath
 
             x_paths, y_paths = list(), list()
             if self.vvvh_original:
