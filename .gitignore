@@ -12,6 +12,7 @@ new_dataset/
 pytorch-CycleGAN-and-pix2pix/
 Old_data/
 new_dataset/
+pytorch-CycleGAN-and-pix2pix/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
